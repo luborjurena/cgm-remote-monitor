@@ -166,7 +166,8 @@ label {
   margin-right: 8px;
 }
 
-#rp_show {
+#rp_show,
+#rp_print {
   background-color: #cfc;
   border: 1px solid #6c6;
   color: #666;
@@ -174,4 +175,8 @@ label {
   font-weight: bold;
   font-size: 12pt;
   text-transform: uppercase;
+}
+
+#rp_print {
+  margin-left: 8px;
 }
