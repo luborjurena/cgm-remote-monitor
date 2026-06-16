@@ -78,6 +78,71 @@ main {
   padding: 15px;
 }
 
+/* PDF / A4 export: print only the currently selected report, no page chrome.
+   Triggered by the "Export PDF (A4)" button (or the browser's print command). */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  html, body {
+    background: #fff !important;
+  }
+
+  /* hide page chrome and the report controls */
+  #toolbar,
+  #tabnav,
+  .toolbar-title,
+  .authentication-status,
+  main > table,
+  main > hr,
+  #rp_show,
+  #rp_print,
+  #info {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #pluginchartplaceholders {
+    width: 100% !important;
+  }
+
+  /* render background colors faithfully (TIR bar, tier chips, tiles) */
+  #pluginchartplaceholders,
+  #pluginchartplaceholders * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* keep cards/tables from splitting across pages */
+  .gd-card,
+  .gd-report table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  #glucosedistribution-placeholder,
+  .gd-report {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  .gd-card {
+    box-shadow: none !important;
+  }
+
+  /* hide interactive controls inside the distribution report */
+  .gd-hours,
+  .gd-rangemetrics {
+    display: none !important;
+  }
+}
+
 input[type=date],
 input[type=text],
 input[type=number],
