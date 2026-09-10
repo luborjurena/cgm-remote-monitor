@@ -1,85 +1,575 @@
-@import url("//fonts.googleapis.com/css?family=Ubuntu:300,400,500,700,300italic,400italic,500italic,700italic");
-@import url("//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,300,400,600,700,800");
 @import url("/glyphs/css/fontello.css");
 
+/* ---------------------------------------------------------------------------
+   Report page design tokens.
+   Data colours (glucose tiers, treatments, weekday/categorical slots) live in
+   lib/report_plugins/palette.js and are injected as --rp-* variables when the
+   plugins load. The chrome tokens below need no JS, so the page is styled
+   before the bundle arrives.
+   ------------------------------------------------------------------------ */
+:root {
+  --rp-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --rp-page: #f4f6f9;
+  --rp-surface: #ffffff;
+  --rp-tint: #f7f9fb;
+  --rp-border: #e6ebf0;
+  --rp-hairline: #eef2f6;
+  --rp-axis: #c5ced6;
+  --rp-ink: #23303d;
+  --rp-ink-2: #5b6b7a;
+  --rp-ink-3: #66788a;
+  --rp-accent: #2a78d6;
+  --rp-accent-strong: #1c5cab;
+  --rp-accent-soft: rgba(42, 120, 214, 0.10);
+  --rp-good-text: #006300;
+  --rp-bad-text: #b32d2d;
+  --rp-good-tint: rgba(0, 131, 0, 0.12);
+  --rp-bad-tint: rgba(227, 73, 72, 0.12);
+  --rp-radius: 14px;
+  --rp-radius-sm: 10px;
+  --rp-shadow: 0 1px 3px rgba(16, 32, 48, 0.06);
+}
 
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
+
 body {
-  font-family: 'Open Sans', Helvetica, Arial, sans-serif;
-  background: white;
-  color: black;
-}
-
-.centeraligned {
-  text-align:center;
-}
-
-#explanation {
-  font: 11px verdana, arial, sans-serif;
-}
-
-#tabnav {
-  text-align: left;
-  margin: 1em 0 0;
-  font: bold 11pt verdana, arial, sans-serif;
-  border-bottom: 1px solid #6c6;
-  list-style-type: none;
-  padding: 0 0 0 15px;
-}
-
-#tabnav li {
-  display: inline-block;
-  padding: 10px 15px;
-  border-top: 1px solid #6c6;
-  border-right: 1px solid #6c6;
-  border-bottom: none;
-  background-color: #cfc;
-  color: #666;
-  margin: 0 0 -1px 0;
-  text-decoration: none;
-}
-
-#tabnav li:first-child {
-  border-left: 1px solid #6c6;
-}
-
-#tabnav .selected  {
-  background: #fff;
-  border-bottom: 1px solid #fff;
-}
-
-#tabnav li:hover {
-  background: #9f9;
-  cursor:pointer;
-}
-
-.tooltip {
-  top: 0;
-  left: 0;
-  color: #444;
-  position: absolute;
-  text-align: left;
-  padding: 4px;
+  font-family: var(--rp-font);
   font-size: 14px;
-  line-height: 15pt;
-  background: white;
-  border: 2px solid black;
-  border-radius: 8px;
-  float: right;
-  min-width: 150px;
-  max-width: 400px;
+  line-height: 1.45;
+  background: var(--rp-page);
+  color: var(--rp-ink);
+  -webkit-font-smoothing: antialiased;
 }
 
 main {
-  padding: 15px;
+  padding: 16px 20px 40px;
 }
 
-/* PDF / A4 export: print only the currently selected report, no page chrome.
-   Triggered by the "Export PDF (A4)" button (or the browser's print command). */
+.centeraligned {
+  text-align: center;
+}
+
+/* ---- tabs ------------------------------------------------------------- */
+#tabnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: -10px 0 0; /* sit flush under #toolbar, which carries a 10px bottom margin */
+  padding: 0 20px;
+  list-style: none;
+  background: var(--rp-surface);
+  border-bottom: 1px solid var(--rp-border);
+  font: 600 13px/1 var(--rp-font);
+}
+
+#tabnav li {
+  padding: 14px 14px 12px;
+  margin-bottom: -1px;
+  color: var(--rp-ink-3);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .15s ease;
+}
+
+#tabnav li:hover {
+  color: var(--rp-ink);
+}
+
+#tabnav .selected {
+  color: var(--rp-accent);
+  border-bottom-color: var(--rp-accent);
+}
+
+/* ---- shared primitives ------------------------------------------------- */
+.rp-h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 6px 2px 16px;
+}
+
+.rp-h2-sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--rp-ink-3);
+}
+
+.rp-card {
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--rp-radius);
+  box-shadow: var(--rp-shadow);
+  padding: 16px 18px;
+  margin: 0 0 16px;
+  box-sizing: border-box;
+}
+
+.rp-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--rp-ink-3);
+  margin: 0 0 12px;
+}
+
+.rp-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.rp-row > .rp-card {
+  flex: 1 1 320px;
+}
+
+.rp-notes {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-ink-3);
+}
+
+.rp-notes a {
+  color: var(--rp-accent);
+}
+
+.rp-hint {
+  font-size: 13px;
+  color: var(--rp-ink-2);
+  margin: 0 0 12px;
+}
+
+.rp-scroll {
+  overflow-x: auto;
+}
+
+/* Option rows inside a report (checkbox legends, size/scale pickers). */
+.rp-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  font-size: 13px;
+  color: var(--rp-ink-2);
+}
+
+.rp-options + .rp-options {
+  margin-top: 10px;
+}
+
+.rp-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.rp-options-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--rp-ink-3);
+  margin-right: 4px;
+}
+
+.rp-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.rp-swatch-line {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid currentColor;
+  flex: none;
+}
+
+/* Legends (identity channel for 2+ series). */
+.rp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12px;
+  color: var(--rp-ink-2);
+  margin: 0 0 12px;
+}
+
+.rp-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Chart cards for the per-day / per-week SVG charts. */
+.rp-chart-card {
+  display: inline-block;
+  vertical-align: top;
+  max-width: 100%;
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  border-radius: var(--rp-radius);
+  box-shadow: var(--rp-shadow);
+  padding: 12px 14px;
+  margin: 0 0 16px;
+  box-sizing: border-box;
+}
+
+.rp-chart-card > tbody > tr > td {
+  vertical-align: top;
+  padding: 0;
+}
+
+.rp-chart-card > tbody > tr > td + td {
+  padding-left: 16px;
+}
+
+.rp-chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rp-ink);
+  margin: 2px 0 8px;
+}
+
+.rp-chart-card svg {
+  display: block;
+}
+
+/* Recessive axes for every d3 chart on the page. */
+#pluginchartplaceholders .axis {
+  color: var(--rp-axis);
+}
+
+#pluginchartplaceholders .axis text {
+  fill: var(--rp-ink-3);
+  stroke: none;
+  font-family: var(--rp-font);
+  font-size: 11px;
+}
+
+#pluginchartplaceholders .axis path,
+#pluginchartplaceholders .axis line {
+  stroke: var(--rp-axis);
+  shape-rendering: crispEdges;
+}
+
+#pluginchartplaceholders svg text {
+  font-family: var(--rp-font);
+}
+
+/* flot chrome */
+#pluginchartplaceholders .flot-tick-label,
+#pluginchartplaceholders .tickLabel {
+  color: var(--rp-ink-3);
+  font-family: var(--rp-font);
+  font-size: 11px;
+}
+
+#pluginchartplaceholders .legend table,
+#pluginchartplaceholders .legendLabel {
+  font-family: var(--rp-font);
+  font-size: 12px;
+  color: var(--rp-ink-2);
+}
+
+/* ---- tables ------------------------------------------------------------ */
+.rp-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rp-table th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--rp-ink-3);
+  text-align: center;
+  vertical-align: bottom;
+  padding: 8px;
+  border-bottom: 2px solid var(--rp-hairline);
+  white-space: nowrap;
+}
+
+.rp-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--rp-hairline);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.rp-table tbody tr:last-child > td {
+  border-bottom: none;
+}
+
+.rp-table tbody tr:not(.rp-table-group):hover > td {
+  background: var(--rp-tint);
+}
+
+/* legacy cell class used by several plugins */
+.rp-table .tdborder,
+#pluginchartplaceholders .tdborder {
+  border: none;
+  border-bottom: 1px solid var(--rp-hairline);
+  padding: 7px 8px;
+  text-align: center;
+}
+
+.rp-table-left th,
+.rp-table-left td:not([align]) {
+  text-align: left;
+}
+
+.rp-table-group > td {
+  background: var(--rp-tint);
+  color: var(--rp-ink-2);
+  font-weight: 600;
+  text-align: left;
+  border-top: 1px solid var(--rp-hairline);
+}
+
+.rp-table-total > td {
+  border-top: 2px solid var(--rp-hairline);
+  font-weight: 600;
+}
+
+/* key/value tables */
+.rp-kv {
+  width: auto;
+  min-width: 220px;
+}
+
+.rp-kv td:first-child {
+  text-align: left;
+  color: var(--rp-ink-2);
+}
+
+.rp-kv td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+
+.rp-kv .rp-kv-total td {
+  border-top: 2px solid var(--rp-hairline);
+  color: var(--rp-ink);
+}
+
+/* value semantics inside tables */
+.rp-pos { color: var(--rp-good-text); font-weight: 600; }
+.rp-neg { color: var(--rp-bad-text); font-weight: 600; }
+.rp-zero { color: var(--rp-ink-3); }
+.rp-muted { color: var(--rp-ink-3); }
+.rp-table td.rp-good { background: var(--rp-good-tint); }
+.rp-table td.rp-bad { background: var(--rp-bad-tint); }
+
+/* ---- controls ---------------------------------------------------------- */
+input[type=date],
+input[type=text],
+input[type=number],
+select {
+  font: 13px var(--rp-font);
+  color: var(--rp-ink);
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+input[type=number] {
+  width: 5.5em;
+}
+
+input[type=date]:focus,
+input[type=text]:focus,
+input[type=number]:focus,
+select:focus {
+  border-color: var(--rp-accent);
+  box-shadow: 0 0 0 3px var(--rp-accent-soft);
+}
+
+input[type=checkbox],
+input[type=radio] {
+  accent-color: var(--rp-accent);
+  margin: 0;
+}
+
+label {
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px;
+  margin-right: 7px;
+}
+
+.rp-btn,
+#pluginchartplaceholders input[type=button] {
+  font: 600 13px var(--rp-font);
+  color: var(--rp-ink);
+  background: var(--rp-surface);
+  border: 1px solid var(--rp-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.rp-btn:hover,
+#pluginchartplaceholders input[type=button]:hover {
+  background: var(--rp-tint);
+  border-color: var(--rp-axis);
+}
+
+.rp-btn-primary {
+  color: #fff;
+  background: var(--rp-accent);
+  border-color: var(--rp-accent);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 9px 20px;
+}
+
+.rp-btn-primary:hover {
+  background: var(--rp-accent-strong);
+  border-color: var(--rp-accent-strong);
+}
+
+/* ---- filter panel ------------------------------------------------------ */
+.rp-filters {
+  padding: 10px 18px 14px;
+}
+
+.rp-filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rp-hairline);
+}
+
+.rp-filter-row:last-of-type {
+  border-bottom: none;
+}
+
+.rp-toggle {
+  flex: none;
+  width: 18px;
+  margin: 8px 0 0;
+}
+
+.rp-filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  flex: 1 1 auto;
+}
+
+.rp-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--rp-ink-2);
+}
+
+.rp-field > .translate {
+  white-space: nowrap;
+}
+
+.rp-daypicks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 13px;
+}
+
+.rp-daypicks label,
+.rp-radio {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rp-ink-2);
+}
+
+.rp-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.presetdates {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rp-ink-2);
+  background: var(--rp-tint);
+  border: 1px solid var(--rp-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+
+.presetdates:hover {
+  color: var(--rp-accent);
+  background: var(--rp-accent-soft);
+  border-color: transparent;
+}
+
+.rp-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  padding-top: 12px;
+}
+
+#info {
+  font-size: 13px;
+  color: var(--rp-ink-3);
+}
+
+#info b {
+  font-weight: 500;
+}
+
+/* ---- tooltip ----------------------------------------------------------- */
+.tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 150px;
+  max-width: 400px;
+  padding: 8px 10px;
+  font-family: var(--rp-font);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fff;
+  background: var(--rp-ink);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(16, 32, 48, .18);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ---- print / PDF export ------------------------------------------------
+   Only the currently selected report is printed, without page chrome.
+   Triggered by the "Export PDF (A4)" button or the browser's print command. */
 @media print {
   @page {
     size: A4 portrait;
@@ -90,16 +580,16 @@ main {
     background: #fff !important;
   }
 
-  /* hide page chrome and the report controls */
   #toolbar,
   #tabnav,
   .toolbar-title,
   .authentication-status,
-  main > table,
-  main > hr,
-  #rp_show,
-  #rp_print,
-  #info {
+  .rp-filters,
+  #info,
+  .rp-options,
+  .rp-hint,
+  .gd-hours,
+  .gd-rangemetrics {
     display: none !important;
   }
 
@@ -112,71 +602,27 @@ main {
     width: 100% !important;
   }
 
-  /* render background colors faithfully (TIR bar, tier chips, tiles) */
   #pluginchartplaceholders,
   #pluginchartplaceholders * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* keep cards/tables from splitting across pages */
+  .rp-card,
+  .rp-chart-card,
   .gd-card,
-  .gd-report table tr {
+  .rp-table tr {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  #glucosedistribution-placeholder,
-  .gd-report {
-    background: #fff !important;
-    padding: 0 !important;
-  }
-
+  .rp-card,
+  .rp-chart-card,
   .gd-card {
     box-shadow: none !important;
   }
 
-  /* hide interactive controls inside the distribution report */
-  .gd-hours,
-  .gd-rangemetrics {
-    display: none !important;
+  .rp-scroll {
+    overflow: visible !important;
   }
-}
-
-input[type=date],
-input[type=text],
-input[type=number],
-select {
-  font: 13px verdana, arial, sans-serif;
-}
-
-label {
-  display: inline-flex;
-  justify-content: flex-start;
-  align-items: center;
-  margin-right: 7px;
-}
-
-#rp_to {
-  margin-right: 10px;
-}
-
-.presetdates {
-  display: inline-block;
-  margin-right: 8px;
-}
-
-#rp_show,
-#rp_print {
-  background-color: #cfc;
-  border: 1px solid #6c6;
-  color: #666;
-  padding: 10px;
-  font-weight: bold;
-  font-size: 12pt;
-  text-transform: uppercase;
-}
-
-#rp_print {
-  margin-left: 8px;
 }

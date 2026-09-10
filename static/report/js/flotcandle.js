@@ -36,18 +36,22 @@
         }
         function drawCandle(ctx, serie, width, dt, open, low, close, high){
             var height;
+            var opts = (serie.candle && typeof serie.candle === 'object') ? serie.candle : {};
             if (open < close){ //Rising 
                 y = offset.top + serie.yaxis.p2c(open);
                 height = serie.yaxis.p2c(close) - serie.yaxis.p2c(open);  
-                ctx.fillStyle = '#51FF21';
+                ctx.fillStyle = opts.risingColor || '#51FF21';
             } else { //Decending
                 y = offset.top + serie.yaxis.p2c(close);
                 height = serie.yaxis.p2c(open) - serie.yaxis.p2c(close); 
-                ctx.fillStyle = '#FF0000';
+                ctx.fillStyle = opts.fallingColor || '#FF0000';
             }
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 0;
-            x = offset.left + serie.xaxis.p2c(dt);
+            ctx.strokeStyle = opts.strokeColor || '#000000';
+            ctx.lineWidth = opts.lineWidth || 0;
+            // cap the body width and centre it in its slot
+            var slot = width * 5 / 4;
+            if (opts.maxWidth && width > opts.maxWidth) width = opts.maxWidth;
+            x = offset.left + serie.xaxis.p2c(dt) + (slot - width) / 2;
             
             //body
             ctx.fillRect (x, y, width, height);
